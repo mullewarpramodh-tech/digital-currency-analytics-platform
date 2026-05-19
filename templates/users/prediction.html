@@ -1,0 +1,133 @@
+{% extends 'users/userbase.html' %}
+{% load static %} 
+{% block contents %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Currency Usage Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f9fc;
+            margin: 20px;
+            color: #333;
+        }
+
+        h2 {
+            color: #2c3e50;
+            margin-left: 450px;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 400px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-left: 450px;
+        }
+
+        input[type="number"],
+        input[type="text"] {
+            width: 90%;
+            padding: 10px;
+            margin-top: 4px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input[type="submit"] {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #2980b9;
+        }
+
+        .results, .probabilities {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #eaf2f8;
+            border-radius: 8px;
+        }
+
+        .results strong {
+            color: #1abc9c;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 15px;
+            text-decoration: none;
+            color: #3498db;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>Predict Most Used Currency</h2>
+
+    {% if prediction %}
+        <div class="results">
+            <h3>Predicted Currency: <strong>{{ prediction }}</strong></h3>
+        </div>
+    {% endif %}
+
+    {% if error %}
+        <p class="error"><strong>Error:</strong> {{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <label for="tx_count">Total Transaction Count:</label><br>
+        <input type="number" name="tx_count" required><br>
+
+        <label for="total_volume_usd">Total Volume in USD:</label><br>
+        <input type="number" step="0.01" name="total_volume_usd" required><br>
+
+        <label for="wallet_count">Wallet Count:</label><br>
+        <input type="number" name="wallet_count" required><br>
+
+        <label>Country:</label><br>
+        <input type="text" name="country" required><br>
+
+        <input type="submit" value="Predict">
+    </form>
+
+    {% if currency_probabilities %}
+        <div class="probabilities">
+            <h3>Predicted Probabilities for Each Currency:</h3>
+            <ul>
+                {% for currency, prob in currency_probabilities.items %}
+                    <li><strong>{{ currency }}</strong>: {{ prob }}%</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <a href="{% url 'training' %}">Re-train Model</a>
+</body>
+</html>
+{% endblock %}
