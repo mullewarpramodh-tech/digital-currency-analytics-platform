@@ -1,0 +1,18 @@
+# Python & Django
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+
+# Optional: You can remove the # below if you DO NOT want to upload your local SQLite database
+# db.sqlite3
+
+# IDEs & OS Files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
