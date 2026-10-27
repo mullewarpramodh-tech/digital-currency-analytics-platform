@@ -1,15 +1,54 @@
 {% extends 'base.html' %}
 {% block contents %}
-<div class="content d-flex flex-column justify-content-center align-items-center" style="min-height: 80vh; text-align: center; padding: 20px;">
-    <h1 style="color: #FFD700; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);">a unified digital currency management and analytics platform</h1>
-        
-    <div class="project-description" style="max-width: 600px; margin-top: 20px; color: #ffffff; background-color: rgba(0, 0, 0, 0.5); padding: 20px; border-radius: 10px;">
-        <h3 style="color: #FFD700;">Project Overview</h3>
-        <img src="https://img.freepik.com/free-vector/tiny-woman-reading-while-sitting-huge-open-book_74855-22580.jpg?t=st=1736247857~exp=1736251457~hmac=d07a2b9d39dc76c6a182d63fe1f83d9bc7c2f852f030ec4124f8ccd5a90d33c3&w=900" alt="" style="width: 400px;height:300px">
-        <p>  a unified digital currency management and analytics platform</p>
-    
-        
-        
+<div class="content d-flex flex-column justify-content-center align-items-center" style="min-height: 85vh; padding: 40px 20px;">
+    <!-- Hero Card -->
+    <div class="card shadow-lg border-0 text-center p-5 text-white" style="max-width: 850px; background: rgba(23, 43, 77, 0.88); backdrop-filter: blur(8px); border-radius: 16px;">
+        <div class="mb-3">
+            <span class="badge badge-warning px-3 py-2 font-weight-bold" style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">
+                <i class="fas fa-chart-line mr-1"></i> FinTech Predictive Intelligence
+            </span>
+        </div>
+        <h1 class="display-5 font-weight-bold mb-3" style="color: #ffffff; text-shadow: 2px 2px 8px rgba(0,0,0,0.5);">
+            Unified Digital Currency Management & Analytics Platform
+        </h1>
+        <p class="lead mb-4" style="color: #cbd5e1; font-size: 1.15rem;">
+            An enterprise-grade financial analytics suite powered by <strong>Django</strong> and <strong>Scikit-Learn Random Forest</strong>. Cleanses multi-relational transaction datasets, aggregates wallet ownership patterns, and predicts digital currency adoption behavior with real-time class probability distributions.
+        </p>
+
+        <!-- Feature Pillars -->
+        <div class="row text-left mb-4">
+            <div class="col-md-4 mb-3 mb-md-0">
+                <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);">
+                    <h6 class="font-weight-bold text-warning mb-1"><i class="fas fa-lock mr-1"></i> Multi-Tier RBAC</h6>
+                    <small style="color: #94a3b8;">Admin approval workflow with PBKDF2 password security.</small>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3 mb-md-0">
+                <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);">
+                    <h6 class="font-weight-bold text-info mb-1"><i class="fas fa-database mr-1"></i> Multi-Relational ETL</h6>
+                    <small style="color: #94a3b8;">Pandas joins across transaction, wallet, and user profiles.</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);">
+                    <h6 class="font-weight-bold text-success mb-1"><i class="fas fa-brain mr-1"></i> Random Forest ML</h6>
+                    <small style="color: #94a3b8;">100-tree ensemble with Gini feature importance scoring.</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action CTA Buttons -->
+        <div class="d-flex justify-content-center flex-wrap gap-2">
+            <a href="{% url 'UserLogin' %}" class="btn btn-primary btn-lg px-4 mr-3 shadow-sm font-weight-bold" style="border-radius: 8px;">
+                <i class="fas fa-user mr-2"></i> User Login
+            </a>
+            <a href="{% url 'AdminLogin' %}" class="btn btn-outline-light btn-lg px-4 mr-3 shadow-sm font-weight-bold" style="border-radius: 8px;">
+                <i class="fas fa-user-shield mr-2"></i> Admin Portal
+            </a>
+            <a href="{% url 'UserRegisterForm' %}" class="btn btn-warning btn-lg px-4 shadow-sm font-weight-bold" style="border-radius: 8px;">
+                <i class="fas fa-user-plus mr-2"></i> Register Account
+            </a>
+        </div>
     </div>
 </div>
 {% endblock %}
