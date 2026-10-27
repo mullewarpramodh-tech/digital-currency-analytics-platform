@@ -1,56 +1,72 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block contents %}
-    <div class="content">
-        <div class="container" style="max-width:450px;"> <!-- Set max-width for the registration form -->
-            <div class="form-container" style="background-color: rgba(255, 255, 255, 0.9); padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);">
-                <h2 class="text-center" style="color: #007bff; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);">User Registration Form</h2>
-                {% if messages %}
-                        {% for message in messages %}
-                        <font color='GREEN'> {{ message }}</font>
-                        {% endfor %}
-                        {% endif %}
-                <form action="{% url 'UserRegisterForm' %}" method="post">
-                    {% csrf_token %}
-                    <div class="form-group">
-                        <label for="name" style="color: #495057;">Name:</label>
-                        <input type="text" class="form-control" id="name" name="name" maxlength="100" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="loginid" style="color: #495057;">Login ID:</label>
-                        <input type="text" class="form-control" id="loginid" name="loginid" maxlength="100" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password" style="color: #495057;">Password:</label>
-                        <input type="password" class="form-control" id="password" name="password" maxlength="100" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="mobile" style="color: #495057;">Mobile:</label>
-                        <input type="text" class="form-control" id="mobile" name="mobile" maxlength="10" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="email" style="color: #495057;">Email:</label>
-                        <input type="email" class="form-control" id="email" name="email" maxlength="100" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="locality" style="color: #495057;">Locality:</label>
-                        <input type="text" class="form-control" id="locality" name="locality" maxlength="100">
-                    </div>
-                    <div class="form-group">
-                        <label for="address" style="color: #495057;">Address:</label>
-                        <textarea class="form-control" id="address" name="address" maxlength="1000" rows="4"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="city" style="color: #495057;">City:</label>
-                        <input type="text" class="form-control" id="city" name="city" maxlength="100">
-                    </div>
-                    <div class="form-group">
-                        <label for="state" style="color: #495057;">State:</label>
-                        <input type="text" class="form-control" id="state" name="state" maxlength="100">
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-block">Register</button>
-                </form>
+<div class="content d-flex justify-content-center align-items-center py-5">
+    <div class="card shadow-lg border-0 p-4" style="width: 100%; max-width: 500px; border-radius: 14px; background: rgba(255, 255, 255, 0.95); color: #2c3e50;">
+        <div class="text-center mb-4">
+            <div class="mb-2 text-warning">
+                <i class="fas fa-user-plus fa-3x"></i>
             </div>
+            <h3 class="font-weight-bold mb-1" style="color: #1e3c72;">Analyst Registration</h3>
+            <p class="text-muted small">Submit profile for multi-tier RBAC approval</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success text-center small py-2 mb-3">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form action="{% url 'UserRegisterForm' %}" method="post">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-group col-md-6 mb-3">
+                    <label class="font-weight-bold small text-dark">Full Name</label>
+                    <input type="text" class="form-control" name="name" required placeholder="e.g. Alex Miller">
+                </div>
+                <div class="form-group col-md-6 mb-3">
+                    <label class="font-weight-bold small text-dark">Desired Login ID</label>
+                    <input type="text" class="form-control" name="loginid" required placeholder="e.g. alex_m">
+                </div>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="font-weight-bold small text-dark">Password</label>
+                <input type="password" class="form-control" name="password" required placeholder="Strong password">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-6 mb-3">
+                    <label class="font-weight-bold small text-dark">Mobile Contact</label>
+                    <input type="text" class="form-control" name="mobile" maxlength="10" required placeholder="10-digit mobile">
+                </div>
+                <div class="form-group col-md-6 mb-3">
+                    <label class="font-weight-bold small text-dark">Email Address</label>
+                    <input type="email" class="form-control" name="email" required placeholder="name@domain.com">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-6 mb-3">
+                    <label class="font-weight-bold small text-dark">City</label>
+                    <input type="text" class="form-control" name="city" placeholder="e.g. New York">
+                </div>
+                <div class="form-group col-md-6 mb-3">
+                    <label class="font-weight-bold small text-dark">State / Region</label>
+                    <input type="text" class="form-control" name="state" placeholder="e.g. NY">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-warning btn-block btn-lg font-weight-bold shadow-sm mt-3" style="border-radius: 8px;">
+                <i class="fas fa-paper-plane mr-1"></i> Register Profile
+            </button>
+        </form>
+
+        <div class="text-center mt-3 pt-3 border-top">
+            <small class="text-muted">Already registered? <a href="{% url 'UserLogin' %}" class="font-weight-bold text-primary">Login Here</a></small>
         </div>
     </div>
+</div>
 {% endblock %}

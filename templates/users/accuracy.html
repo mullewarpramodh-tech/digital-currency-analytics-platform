@@ -1,13 +1,99 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Training Result - Digital Currency Model</title>
-</head>
-<body>
-    <h2>Model Training Completed</h2>
-    <!-- <p><strong>Accuracy:</strong> {{ accuracy }}%</p> -->
-    <h3>Classification Report:</h3>
-    <pre>{{ report }}</pre>
-    <a href="{% url 'prediction' %}">Go to Prediction</a>
-</body>
-</html>
+{% extends 'users/userbase.html' %}
+{% load static %}
+
+{% block contents %}
+<div class="container my-5">
+    <div class="row">
+        <!-- Header -->
+        <div class="col-12 text-center mb-4">
+            <h2 class="display-6 font-weight-bold" style="color: #2c3e50;">
+                <i class="fas fa-brain text-primary"></i> Machine Learning Training Telemetry
+            </h2>
+            <p class="text-muted">
+                Supervised Scikit-Learn Random Forest Classifier (100 Estimators) trained on multi-relational digital currency metrics.
+            </p>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100 text-center" style="border-radius: 12px; background: linear-gradient(135deg, #1e3c72, #2a5298); color: white;">
+                <div class="card-body py-4">
+                    <h6 class="text-uppercase tracking-wider mb-2" style="opacity: 0.85;">Model Accuracy</h6>
+                    <h1 class="display-4 font-weight-bold mb-0">{{ accuracy }}%</h1>
+                    <small style="opacity: 0.85;">Test Set Evaluation (80/20 Split)</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100 text-center" style="border-radius: 12px; background: linear-gradient(135deg, #11998e, #38ef7d); color: white;">
+                <div class="card-body py-4">
+                    <h6 class="text-uppercase tracking-wider mb-2" style="opacity: 0.85;">Training Samples</h6>
+                    <h1 class="display-4 font-weight-bold mb-0">{{ train_samples }}</h1>
+                    <small style="opacity: 0.85;">Total Records: {{ total_samples }} | Test: {{ test_samples }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-0 h-100 text-center" style="border-radius: 12px; background: linear-gradient(135deg, #f857a6, #ff5858); color: white;">
+                <div class="card-body py-4">
+                    <h6 class="text-uppercase tracking-wider mb-2" style="opacity: 0.85;">Target Currencies</h6>
+                    <h1 class="display-4 font-weight-bold mb-0">{{ classes|length }}</h1>
+                    <small style="opacity: 0.85;">{{ classes|join:", " }}</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Importance Breakdown -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100" style="border-radius: 12px;">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="mb-0 font-weight-bold" style="color: #2c3e50;">
+                        <i class="fas fa-chart-bar text-info"></i> Feature Importance (Gini Impurity)
+                    </h5>
+                    <small class="text-muted">Relative feature contribution to random forest decision trees</small>
+                </div>
+                <div class="card-body">
+                    {% for feat in feature_importances %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="font-weight-bold text-dark">{{ feat.name }}</span>
+                                <span class="badge badge-primary font-weight-bold">{{ feat.importance }}%</span>
+                            </div>
+                            <div class="progress" style="height: 10px; border-radius: 5px;">
+                                <div class="progress-bar bg-info progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ feat.importance }}%"></div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Classification Report -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm border-0 h-100" style="border-radius: 12px;">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="mb-0 font-weight-bold" style="color: #2c3e50;">
+                        <i class="fas fa-table text-warning"></i> Classification Performance Report
+                    </h5>
+                    <small class="text-muted">Per-class precision, recall, and F1-score</small>
+                </div>
+                <div class="card-body">
+                    <pre class="p-3 bg-light text-dark font-weight-normal border rounded" style="font-size: 0.88rem; line-height: 1.5; font-family: 'Consolas', monospace;">{{ report }}</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action CTA -->
+        <div class="col-12 text-center mt-3">
+            <a href="{% url 'prediction' %}" class="btn btn-primary btn-lg px-4 shadow-sm" style="border-radius: 8px;">
+                Proceed to Predictive Analytics <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+            <a href="{% url 'ViewDataset' %}" class="btn btn-outline-secondary btn-lg px-4 ml-2" style="border-radius: 8px;">
+                Inspect Raw Datasets
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
