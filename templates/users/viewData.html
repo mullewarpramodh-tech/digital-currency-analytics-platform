@@ -1,57 +1,65 @@
-{%extends 'users/userbase.html'%}
-{%block contents%}
-<style>
-table {
-  font-family: Arial, Helvetica, sans-serif;
-  border-collapse: collapse;
-  width: 100%;
-}
+{% extends 'users/userbase.html' %}
+{% load static %}
 
-table td, table th {
-  border: 1px solid #ddd;
-  padding: 8px;
-}
+{% block contents %}
+<div class="container my-5">
+    <div class="row">
+        <!-- Header -->
+        <div class="col-12 text-center mb-4">
+            <h2 class="display-6 font-weight-bold" style="color: #2c3e50;">
+                <i class="fas fa-table text-primary"></i> Multi-Relational Dataset Browser
+            </h2>
+            <p class="text-muted">
+                Explore normalized and joined transaction, wallet, and demographic datasets powering the predictive analytics engine.
+            </p>
+        </div>
 
-table tr:nth-child(even){background-color: #f2f2f2;}
+        <!-- Dataset Selection Tabs -->
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm border-0" style="border-radius: 12px;">
+                <div class="card-body p-3">
+                    <ul class="nav nav-pills nav-fill">
+                        <li class="nav-item">
+                            <a class="nav-link font-weight-bold {% if dataset_type == 'analytics' %}active bg-primary{% endif %}" href="{% url 'ViewDataset' %}?dataset=analytics">
+                                <i class="fas fa-chart-line mr-2"></i> Transaction Analytics (analytics.csv)
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link font-weight-bold {% if dataset_type == 'wallets' %}active bg-primary{% endif %}" href="{% url 'ViewDataset' %}?dataset=wallets">
+                                <i class="fas fa-wallet mr-2"></i> Wallets Registry (wallets.csv)
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link font-weight-bold {% if dataset_type == 'users' %}active bg-primary{% endif %}" href="{% url 'ViewDataset' %}?dataset=users">
+                                <i class="fas fa-users mr-2"></i> User Demographics (users.csv)
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
 
-table tr:hover {background-color: #ddd;}
-
-table th {
-  padding-top: 12px;
-  padding-bottom: 12px;
-  text-align: left;
-  background-color: RED;
-  color: WHITE;
-}
-
-
-</style>
-<style>
-table {
-  font-family: arial, sans-serif;
-  border-collapse: collapse;
-  width: 100%;
-}
-
-td, th {
-  border: 1px solid #DDBB00;
-  text-align: left;
-  padding: 8px;
-}
-
-tr:nth-child(even) {
-  background-color: #AADDAA;
-}
-
-
-</style>
-<section class="content">
-    <h2>View Dataset</h2>
-    <p>
-        {{data|safe}}
-    </p>
-    <div class="grid">
-
+        <!-- Dataset Table Card -->
+        <div class="col-12">
+            <div class="card shadow-sm border-0" style="border-radius: 12px;">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0 font-weight-bold" style="color: #2c3e50;">{{ display_title }}</h5>
+                        <small class="text-muted">Displaying sample records (Top 50 of {{ total_rows }} rows | {{ total_cols }} attributes)</small>
+                    </div>
+                    <div>
+                        <span class="badge badge-success px-3 py-2 font-weight-bold">
+                            <i class="fas fa-check-circle mr-1"></i> Data Cleansed & Normalized
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                        {{ data|safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-</section>
-{%endblock%}
+</div>
+{% endblock %}

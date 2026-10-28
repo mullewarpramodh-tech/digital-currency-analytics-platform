@@ -1,19 +1,32 @@
-
 import os
 import joblib
 import pandas as pd
 from django.conf import settings
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.hashers import make_password, check_password
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, classification_report
 
+from .models import UserRegistrationModel
 
 BASE_DIR = settings.BASE_DIR
 
+
 def training(request):
-    # Load required CSV files
+    """
+    Multi-relational data pipeline & Scikit-Learn Random Forest training.
+    Merges:
+      1. media/analytics.csv (tx_count, total_volume_usd, most_used_currency)
+      2. media/wallets.csv (aggregated wallet_count per user)
+      3. media/users.csv (demographic country feature)
+    Persists:
+      - currency_model.pkl
+      - currency_label_encoder.pkl
+      - country_encoder.pkl
+    """
     analytics_path = os.path.join(BASE_DIR, 'media', 'analytics.csv')
     wallets_path = os.path.join(BASE_DIR, 'media', 'wallets.csv')
     users_path = os.path.join(BASE_DIR, 'media', 'users.csv')
@@ -22,157 +35,239 @@ def training(request):
     wallets = pd.read_csv(wallets_path)
     users = pd.read_csv(users_path)
 
-    # Add wallet_count per user from wallets.csv
+    # Multi-relational join 1: wallet count per user
     wallet_count_df = wallets.groupby("user_id").size().reset_index(name="wallet_count")
-    analytics = analytics.merge(wallet_count_df, on="user_id", how="left")
+    analytics = analytics.merge(wallet_count_df, on="user_id", how="left").fillna({"wallet_count": 0})
 
-    # Optionally add user feature like country (encoded)
-    analytics = analytics.merge(users[["user_id", "country"]], on="user_id", how="left")
-    analytics["country"] = LabelEncoder().fit_transform(analytics["country"])
+    # Multi-relational join 2: demographic country per user
+    analytics = analytics.merge(users[["user_id", "country"]], on="user_id", how="left").fillna({"country": "Unknown"})
 
-    
+    # Clean missing values
+    analytics = analytics.dropna(subset=["tx_count", "total_volume_usd", "wallet_count", "country", "most_used_currency"])
 
-    analytics = analytics.dropna(subset=["tx_count", "total_volume_usd", "wallet_count", "country",])
-    X = analytics[["tx_count", "total_volume_usd", "wallet_count", "country"]]
-    # Prepare features and label
-    X = analytics[["tx_count", "total_volume_usd", "wallet_count", "country"]]
+    # Categorical feature encoding for Country
+    country_encoder = LabelEncoder()
+    analytics["country_encoded"] = country_encoder.fit_transform(analytics["country"].astype(str))
+    joblib.dump(country_encoder, os.path.join(BASE_DIR, 'media', 'country_encoder.pkl'))
+
+    # Feature matrix X and Target vector y
+    feature_cols = ["tx_count", "total_volume_usd", "wallet_count", "country_encoded"]
+    X = analytics[feature_cols]
     y = analytics["most_used_currency"]
-    print(analytics['most_used_currency'].value_counts())
 
-    # Encode target
-    le = LabelEncoder()
-    y_encoded = le.fit_transform(y)
-    joblib.dump(le, os.path.join(BASE_DIR, 'media', 'currency_label_encoder.pkl'))
+    # Target label encoding for currencies (e.g. BTC, ETH, USDT, XRP, BNB)
+    currency_encoder = LabelEncoder()
+    y_encoded = currency_encoder.fit_transform(y)
+    joblib.dump(currency_encoder, os.path.join(BASE_DIR, 'media', 'currency_label_encoder.pkl'))
 
-    # Train-test split
+    # Train / Test split (80/20) with reproducible seed
     X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
 
-    # Train model
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    # Train Random Forest Classifier
+    model = RandomForestClassifier(n_estimators=100, max_depth=12, random_state=42)
     model.fit(X_train, y_train)
     joblib.dump(model, os.path.join(BASE_DIR, 'media', 'currency_model.pkl'))
 
-    # Evaluate
+    # Model evaluation
     y_pred = model.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)
-    report = classification_report(le.inverse_transform(y_test), le.inverse_transform(y_pred), output_dict=False)
+    acc = round(accuracy_score(y_test, y_pred) * 100, 2)
+    report_text = classification_report(
+        currency_encoder.inverse_transform(y_test),
+        currency_encoder.inverse_transform(y_pred),
+        output_dict=False
+    )
+
+    # Feature importances breakdown
+    feature_display_names = ["Transaction Count", "Total Volume (USD)", "Wallet Count", "Country Demographics"]
+    feature_importances = [
+        {"name": name, "importance": round(imp * 100, 2)}
+        for name, imp in zip(feature_display_names, model.feature_importances_)
+    ]
+    feature_importances.sort(key=lambda x: x["importance"], reverse=True)
 
     return render(request, 'users/accuracy.html', {
-        'accuracy': round(acc * 100, 2),
-        'report': report,
+        'accuracy': acc,
+        'report': report_text,
+        'feature_importances': feature_importances,
+        'total_samples': len(analytics),
+        'train_samples': len(X_train),
+        'test_samples': len(X_test),
+        'classes': list(currency_encoder.classes_)
     })
 
 
 def prediction(request):
+    """
+    On-demand predictive classification and probability scoring for digital currency adoption.
+    """
     prediction_label = None
+    currency_probabilities = {}
     error = None
     currency_counts = {}
+    available_countries = []
+
+    # Load country encoder classes for dropdown selection
+    try:
+        country_encoder = joblib.load(os.path.join(BASE_DIR, 'media', 'country_encoder.pkl'))
+        available_countries = sorted(list(country_encoder.classes_))
+    except Exception:
+        available_countries = ["USA", "UK", "Germany", "Canada", "India", "Australia"]
 
     if request.method == 'POST':
         try:
-            tx_count = int(request.POST['tx_count'])
-            total_volume_usd = float(request.POST['total_volume_usd'])
-            wallet_count = int(request.POST['wallet_count'])
-            country = request.POST['country']
+            tx_count = int(request.POST.get('tx_count', 0))
+            total_volume_usd = float(request.POST.get('total_volume_usd', 0.0))
+            wallet_count = int(request.POST.get('wallet_count', 1))
+            country = request.POST.get('country', '').strip()
 
-            # Load encoders and model
+            # Load trained artifacts
             model = joblib.load(os.path.join(BASE_DIR, 'media', 'currency_model.pkl'))
-            le = joblib.load(os.path.join(BASE_DIR, 'media', 'currency_label_encoder.pkl'))
+            currency_encoder = joblib.load(os.path.join(BASE_DIR, 'media', 'currency_label_encoder.pkl'))
             country_encoder = joblib.load(os.path.join(BASE_DIR, 'media', 'country_encoder.pkl'))
 
+            # Safely encode country input
             if country in country_encoder.classes_:
-                country_encoded = country_encoder.transform([country])[0]
+                country_encoded = int(country_encoder.transform([country])[0])
             else:
-                country_encoded = country_encoder.transform([country_encoder.classes_[0]])[0]
+                country_encoded = int(country_encoder.transform([country_encoder.classes_[0]])[0])
 
             input_data = pd.DataFrame([{
                 "tx_count": tx_count,
                 "total_volume_usd": total_volume_usd,
                 "wallet_count": wallet_count,
-                "country": country_encoded
+                "country_encoded": country_encoded
             }])
 
-            prediction = model.predict(input_data)[0]
-            prediction_label = le.inverse_transform([prediction])[0]
+            # Predict target class
+            pred_code = model.predict(input_data)[0]
+            prediction_label = currency_encoder.inverse_transform([pred_code])[0]
+
+            # Compute probability distribution across all currencies
+            probs = model.predict_proba(input_data)[0]
+            currency_probabilities = {
+                curr: round(float(prob) * 100, 2)
+                for curr, prob in zip(currency_encoder.classes_, probs)
+            }
+            currency_probabilities = dict(sorted(currency_probabilities.items(), key=lambda item: item[1], reverse=True))
 
         except Exception as e:
-            error = str(e)
+            error = f"Inference exception: {str(e)}"
 
-    # Always show current currency stats
+    # Load dataset distribution summary
     try:
         analytics_path = os.path.join(BASE_DIR, 'media', 'analytics.csv')
         analytics = pd.read_csv(analytics_path)
         currency_counts = analytics['most_used_currency'].value_counts().to_dict()
     except Exception as e:
-        currency_counts = {'Error loading analytics.csv': str(e)}
+        currency_counts = {'Error': str(e)}
 
     return render(request, 'users/prediction.html', {
         'prediction': prediction_label,
+        'currency_probabilities': currency_probabilities,
         'error': error,
-        'currency_counts': currency_counts
+        'currency_counts': currency_counts,
+        'available_countries': available_countries
     })
 
+
 def ViewDataset(request):
-    dataset = os.path.join(settings.MEDIA_ROOT, 'books.csv')
-    import pandas as pd
-    df = pd.read_csv(dataset, nrows=100)
-    df = df.to_html(index=None)
-    return render(request, 'users/viewData.html', {'data': df})
+    """
+    Multi-relational dataset browser (analytics.csv, wallets.csv, users.csv).
+    """
+    dataset_type = request.GET.get('dataset', 'analytics')
+    valid_files = {
+        'analytics': ('analytics.csv', 'Transaction Analytics Dataset'),
+        'wallets': ('wallets.csv', 'Multi-Currency Wallets Dataset'),
+        'users': ('users.csv', 'Demographic User Profiles Dataset')
+    }
 
+    filename, display_title = valid_files.get(dataset_type, ('analytics.csv', 'Transaction Analytics Dataset'))
+    filepath = os.path.join(BASE_DIR, 'media', filename)
 
-from django.shortcuts import render, redirect
-from .models import UserRegistrationModel
-from django.contrib import messages
+    try:
+        df = pd.read_csv(filepath)
+        total_rows = len(df)
+        total_cols = len(df.columns)
+        table_html = df.head(50).to_html(classes="table table-striped table-hover table-bordered", index=False)
+    except Exception as e:
+        total_rows = 0
+        total_cols = 0
+        table_html = f"<div class='alert alert-danger'>Error loading dataset: {str(e)}</div>"
+
+    return render(request, 'users/viewData.html', {
+        'data': table_html,
+        'dataset_type': dataset_type,
+        'display_title': display_title,
+        'total_rows': total_rows,
+        'total_cols': total_cols
+    })
+
 
 def UserRegisterActions(request):
+    """
+    User registration with secure PBKDF2 password hashing.
+    """
     if request.method == 'POST':
+        raw_password = request.POST.get('password', '')
+        hashed_password = make_password(raw_password)
+
         user = UserRegistrationModel(
-            name=request.POST['name'],
-            loginid=request.POST['loginid'],
-            password=request.POST['password'],
-            mobile=request.POST['mobile'],
-            email=request.POST['email'],
-            locality=request.POST['locality'],
-            address=request.POST['address'],
-            city=request.POST['city'],
-            state=request.POST['state'],
+            name=request.POST.get('name', ''),
+            loginid=request.POST.get('loginid', ''),
+            password=hashed_password,
+            mobile=request.POST.get('mobile', ''),
+            email=request.POST.get('email', ''),
+            locality=request.POST.get('locality', ''),
+            address=request.POST.get('address', ''),
+            city=request.POST.get('city', ''),
+            state=request.POST.get('state', ''),
             status='waiting'
         )
         user.save()
-        messages.success(request,"Registration successful!")
-    return render(request, 'UserRegistrations.html') 
+        messages.success(request, "Registration successful! Awaiting admin activation.")
+        return redirect('UserLogin')
+
+    return render(request, 'UserRegistrations.html')
 
 
 def UserLoginCheck(request):
+    """
+    User authentication supporting hashed and legacy passwords.
+    """
     if request.method == "POST":
-        loginid = request.POST.get('loginid')
-        pswd = request.POST.get('pswd')
-        print("Login ID = ", loginid, ' Password = ', pswd)
+        loginid = request.POST.get('loginid', '')
+        pswd = request.POST.get('pswd', '')
+
         try:
-            check = UserRegistrationModel.objects.get(loginid=loginid, password=pswd)
-            status = check.status
-            print('Status is = ', status)
-            if status == "activated":
-                request.session['id'] = check.id
-                request.session['loggeduser'] = check.name
-                request.session['loginid'] = loginid
-                request.session['email'] = check.email
-                data = {'loginid': loginid}
-                print("User id At", check.id, status)
-                return render(request, 'users/UserHomePage.html', {})
+            user = UserRegistrationModel.objects.get(loginid=loginid)
+            # Verify password (supports hashed and plaintext migration)
+            password_matches = check_password(pswd, user.password) or (user.password == pswd)
+
+            if password_matches:
+                if user.status == "activated":
+                    request.session['id'] = user.id
+                    request.session['loggeduser'] = user.name
+                    request.session['loginid'] = user.loginid
+                    request.session['email'] = user.email
+                    return redirect('UserHome')
+                else:
+                    messages.warning(request, 'Your account is pending admin activation.')
+                    return render(request, 'UserLogin.html')
             else:
-                messages.success(request, 'Your Account Not at activated')
-                return render(request, 'UserLogin.html')
+                messages.error(request, 'Invalid credentials.')
+        except UserRegistrationModel.DoesNotExist:
+            messages.error(request, 'Invalid credentials.')
         except Exception as e:
-            print('Exception is ', str(e))
-            pass
-        messages.success(request, 'Invalid Login id and password')
+            messages.error(request, f'Login error: {str(e)}')
+
     return render(request, 'UserLogin.html', {})
 
 
 def UserHome(request):
-    return render(request, 'users/UserHomePage.html', {})
+    return render(request, 'users/UserHomePage.html', {
+        'loggeduser': request.session.get('loggeduser', 'User')
+    })
 
 
 def index(request):
-    return render(request,"index.html")
+    return render(request, "index.html")

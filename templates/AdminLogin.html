@@ -1,90 +1,54 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block contents %}
-<style>
-    body {
-        background-color: #f8f9fa;
-        font-family: Arial, sans-serif;
-    }
-    .container {
-        max-width: 400px; /* Set a max-width for the box */
-        background-color:#f5f5f5 ;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        padding: 30px;
-        margin: 50px auto; /* Center the box */
-    }
-    .admin-login-heading {
-        margin-bottom: 20px;
-        text-align: center;
-        color: #007bff; /* Use a distinct color for the admin login heading */
-    }
-    .form-group label {
-        font-weight: bold;
-        color: #495057;
-    }
-    .btn-primary {
-        background-color: #007bff;
-        border: none;
-    }
-    .btn-primary:hover {
-        background-color: #0056b3;
-    }
-    .form-control {
-        border-radius: 5px;
-        border: 1px solid #ced4da;
-    }
-    .form-control:focus {
-        border-color: #80bdff;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    }
-    textarea {
-        resize: none;
-    }
-</style>
-<br>
-<br>
-<section class="content">
-    <div class="container">
-        <div class="we-do-details">
-            <div class="section-header text-center">
-                <h2 class="admin-login-heading">Admin Login</h2>
-                <form action="AdminLogincheck" method="POST" class="text-primary" style="width:100%">
-                    {% csrf_token %}
-                    <table>
-                        <div class="form-group row">
-                            <div class="col-md-12">
-                                <input type="text" class="form-control" name="loginid" required placeholder="Enter Login Id">
-                            </div>
-                        </div>
-                        <br>
-                        <div class="form-group row">
-                            <div class="col-md-12">
-                                <input type="password" class="form-control" name="pswd" required placeholder="Enter password">
-                            </div>
-                        </div>
-                        <tr>
-                            <td style="padding:20px;">
-                                <button class="btn btn-block btn-primary text-white py-2 px-4" style="margin-left:20%;" type="submit">
-                                    Login
-                                </button>
-                            </td>
-                            <td>
-                                <button class="btn btn-block btn-primary text-white py-2 px-4" style="margin-left:20%;" type="reset">
-                                    Reset
-                                </button>
-                            </td>
-                        </tr>
-                        {% if messages %}
-                        {% for message in messages %}
-                        <font color='GREEN'> {{ message }}</font>
-                        {% endfor %}
-                        {% endif %}
-                    </table>
-                </form>
-            </div><!--/.section-header-->
-        </div><!--/.we-do-details-->
-    </div><!--/.container-->
-</section>
-<br>
-<br><br><br><br><br>
+<div class="content d-flex justify-content-center align-items-center" style="min-height: 85vh;">
+    <div class="card shadow-lg border-0 p-4" style="width: 100%; max-width: 440px; border-radius: 14px; background: rgba(255, 255, 255, 0.95); color: #2c3e50;">
+        <div class="text-center mb-4">
+            <div class="mb-2 text-warning">
+                <i class="fas fa-user-shield fa-4x"></i>
+            </div>
+            <h3 class="font-weight-bold mb-1" style="color: #0f2027;">Admin Portal</h3>
+            <p class="text-muted small">Governance & RBAC authorization console</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-danger text-center small py-2 mb-3">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form action="{% url 'AdminLoginCheck' %}" method="POST">
+            {% csrf_token %}
+            <div class="form-group mb-3">
+                <label class="font-weight-bold text-dark small">Admin Username</label>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-light border-right-0"><i class="fas fa-user text-muted"></i></span>
+                    </div>
+                    <input type="text" class="form-control border-left-0" name="loginid" required placeholder="Default: admin" value="admin">
+                </div>
+            </div>
+
+            <div class="form-group mb-4">
+                <label class="font-weight-bold text-dark small">Master Key / Password</label>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-light border-right-0"><i class="fas fa-key text-muted"></i></span>
+                    </div>
+                    <input type="password" class="form-control border-left-0" name="pswd" required placeholder="Default: admin" value="admin">
+                </div>
+            </div>
+
+            <button class="btn btn-dark btn-block btn-lg font-weight-bold shadow-sm mb-2" type="submit" style="border-radius: 8px; background: #0f2027;">
+                <i class="fas fa-lock-open mr-1"></i> Access Admin Console
+            </button>
+        </form>
+
+        <div class="text-center mt-3 pt-3 border-top">
+            <small class="text-muted">Standard analyst? <a href="{% url 'UserLogin' %}" class="font-weight-bold text-primary">User Login</a></small>
+        </div>
+    </div>
+</div>
 {% endblock %}
