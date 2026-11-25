@@ -1,82 +1,16 @@
-
-
 from django.shortcuts import render
 
 
 def index(request):
+    """Platform landing page."""
     return render(request, 'index.html', {})
 
+
 def AdminLogin(request):
+    """Administrator portal login entrypoint."""
     return render(request, 'AdminLogin.html', {})
 
+
 def UserLogin(request):
+    """User / Analyst authentication portal entrypoint."""
     return render(request, 'UserLogin.html', {})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""def index(request):
-    return render(request, 'index.html')
-
-def AdminLogin(request):
-    if request.method == 'POST':
-        usrid = request.POST.get('loginid')
-        pswd = request.POST.get('pswd')
-        print("User ID is = ", usrid)
-        if usrid == 'admin' and pswd == 'admin':
-            return render(request, 'admins/AdminHome.html')
-
-        else:
-            messages.success(request, 'Please Check Your Login Details')
-    return render(request, 'AdminLogin.html', {})
-
-def base(request):
-    return render(request, 'base.html')
-
-def UserLogin(request):
-    return render(request, 'UserLogin.html')
-
-def UserRegistrations(request):
-    return render(request, 'UserRegistrations.html')
-
-
-
-def RegisterUsersView(request):
-    data = UserRegistrationModel.objects.all()
-    return render(request, 'admins/viewregisterusers.html', {'data': data})
-
-"""
-

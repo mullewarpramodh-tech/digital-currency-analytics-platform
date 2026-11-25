@@ -21,12 +21,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-REDACTED-HISTORICAL-SECRET-KEY-FOR-PORTFOLIO'
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-REDACTED-HISTORICAL-SECRET-KEY-FOR-PORTFOLIO'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 
 
 # Application definition
@@ -40,8 +44,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'admins',
     'users'
-
-    
 ]
 
 MIDDLEWARE = [
@@ -120,10 +122,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static'
-]
+] if (BASE_DIR / 'static').exists() else []
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

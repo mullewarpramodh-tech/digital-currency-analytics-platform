@@ -15,27 +15,37 @@
         </div>
 
         <!-- Metric KPI Cards -->
-        <div class="col-md-4 mb-4">
+        <div class="col-md-3 mb-4">
             <div class="card shadow-sm border-0 h-100 text-center" style="border-radius: 12px; background: linear-gradient(135deg, #1e3c72, #2a5298); color: white;">
                 <div class="card-body py-4">
                     <h6 class="text-uppercase tracking-wider mb-2" style="opacity: 0.85;">Model Accuracy</h6>
                     <h1 class="display-4 font-weight-bold mb-0">{{ accuracy }}%</h1>
-                    <small style="opacity: 0.85;">Test Set Evaluation (80/20 Split)</small>
+                    <small style="opacity: 0.85;">Stratified Test Set (80/20)</small>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4 mb-4">
+        <div class="col-md-3 mb-4">
             <div class="card shadow-sm border-0 h-100 text-center" style="border-radius: 12px; background: linear-gradient(135deg, #11998e, #38ef7d); color: white;">
+                <div class="card-body py-4">
+                    <h6 class="text-uppercase tracking-wider mb-2" style="opacity: 0.85;">Weighted F1-Score</h6>
+                    <h1 class="display-4 font-weight-bold mb-0">{{ f1_score }}%</h1>
+                    <small style="opacity: 0.85;">Harmonic Mean of Precision & Recall</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm border-0 h-100 text-center" style="border-radius: 12px; background: linear-gradient(135deg, #6a11cb, #2575fc); color: white;">
                 <div class="card-body py-4">
                     <h6 class="text-uppercase tracking-wider mb-2" style="opacity: 0.85;">Training Samples</h6>
                     <h1 class="display-4 font-weight-bold mb-0">{{ train_samples }}</h1>
-                    <small style="opacity: 0.85;">Total Records: {{ total_samples }} | Test: {{ test_samples }}</small>
+                    <small style="opacity: 0.85;">Total: {{ total_samples }} | Test: {{ test_samples }}</small>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-4 mb-4">
+        <div class="col-md-3 mb-4">
             <div class="card shadow-sm border-0 h-100 text-center" style="border-radius: 12px; background: linear-gradient(135deg, #f857a6, #ff5858); color: white;">
                 <div class="card-body py-4">
                     <h6 class="text-uppercase tracking-wider mb-2" style="opacity: 0.85;">Target Currencies</h6>

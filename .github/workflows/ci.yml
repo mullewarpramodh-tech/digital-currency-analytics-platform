@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - 'feature/**'
+      - 'feature-*'
   pull_request:
     branches:
       - main
@@ -32,5 +33,5 @@ jobs:
       - name: Django System Integrity Check
         run: python manage.py check
 
-      - name: Run Automated Test Suite
-        run: python manage.py test users
+      - name: Run Complete Automated Test Suite
+        run: python manage.py test

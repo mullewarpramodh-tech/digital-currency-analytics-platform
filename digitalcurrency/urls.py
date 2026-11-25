@@ -37,13 +37,14 @@ urlpatterns = [
     path('userDetails', admins.RegisterUsersView, name='RegisterUsersView'),
     path('ActivUsers/', admins.ActivaUsers, name='activate_users'),
     path('DeleteUsers/', admins.DeleteUsers, name='delete_users'),
-    path('adminhome',admins.adminhome,name="adminhome"),
+    path('adminhome', admins.adminhome, name="adminhome"),
+    path('AdminLogout', admins.AdminLogout, name="AdminLogout"),
     
-    
-    #userurls
-    path('UserRegisterForm',uv.UserRegisterActions,name='UserRegisterForm'),
+    # user urls
+    path('UserRegisterForm', uv.UserRegisterActions, name='UserRegisterForm'),
     path("UserLoginCheck/", usr.UserLoginCheck, name="UserLoginCheck"),
     path("UserHome/", usr.UserHome, name="UserHome"),
+    path("UserLogout/", usr.UserLogout, name="UserLogout"),
     path("ViewDataset/", usr.ViewDataset, name="ViewDataset"),
     path("prediction/", usr.prediction, name="prediction"),
     path("training", usr.training, name="training"),

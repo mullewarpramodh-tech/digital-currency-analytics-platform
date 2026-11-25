@@ -6,9 +6,13 @@ __pycache__/
 *$py.class
 *.so
 .env
+staticfiles/
 
-# Optional: You can remove the # below if you DO NOT want to upload your local SQLite database
-# db.sqlite3
+# SQLite Database
+*.sqlite3
+*.sqlite3-journal
+db.sqlite3
+
 
 # IDEs & OS Files
 .idea/
@@ -16,3 +20,4 @@ __pycache__/
 *.swp
 .DS_Store
 Thumbs.db
+
