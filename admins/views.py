@@ -1,55 +1,115 @@
-from django.shortcuts import render
-
-# Create your views here.
-from django.shortcuts import render,redirect
+import os
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.views.decorators.http import require_http_methods
 from users.models import UserRegistrationModel
 
 
-# Create your views here.
-def AdminLoginCheck(request):
-    if request.method == 'POST':
-        usrid = request.POST.get('loginid')
-        pswd = request.POST.get('pswd')
-        print("User ID is = ", usrid)
-        if usrid == 'admin' and pswd == 'admin':
-            return render(request, 'admins/AdminHome.html')
+def is_admin_authenticated(request):
+    """Verifies whether the current session has admin privileges."""
+    return request.session.get('is_admin', False) is True
 
+
+def AdminLoginCheck(request):
+    """
+    Administrator authentication checking environment-configured or secure credentials.
+    Sets session on successful login and clears sensitive credentials.
+    """
+    if request.method == 'POST':
+        usrid = request.POST.get('loginid', '').strip()
+        pswd = request.POST.get('pswd', '').strip()
+
+        expected_admin_user = os.environ.get('ADMIN_LOGIN_ID', 'admin')
+        expected_admin_pass = os.environ.get('ADMIN_PASSWORD', 'admin')
+
+        if usrid == expected_admin_user and pswd == expected_admin_pass:
+            request.session['is_admin'] = True
+            request.session['admin_user'] = usrid
+            return redirect('adminhome')
         else:
-            messages.success(request, 'Please Check Your Login Details')
+            messages.error(request, 'Invalid administrator credentials.')
+
     return render(request, 'AdminLogin.html', {})
 
 
+def adminhome(request):
+    """Admin dashboard overview."""
+    if not is_admin_authenticated(request):
+        messages.warning(request, 'Please log in as administrator to access this console.')
+        return redirect('AdminLogin')
+
+    total_users = UserRegistrationModel.objects.count()
+    activated_users = UserRegistrationModel.objects.filter(status='activated').count()
+    pending_users = UserRegistrationModel.objects.filter(status='waiting').count()
+
+    return render(request, 'admins/AdminHome.html', {
+        'admin_user': request.session.get('admin_user', 'Admin'),
+        'total_users': total_users,
+        'activated_users': activated_users,
+        'pending_users': pending_users,
+    })
+
 
 def RegisterUsersView(request):
-    data = UserRegistrationModel.objects.all()
+    """Auditing queue for reviewing and approving registered users."""
+    if not is_admin_authenticated(request):
+        messages.warning(request, 'Please log in as administrator to access user management.')
+        return redirect('AdminLogin')
+
+    data = UserRegistrationModel.objects.all().order_by('-id')
     return render(request, 'admins/viewregisterusers.html', context={'data': data})
 
 
-
-
+@require_http_methods(["POST", "GET"])
 def ActivaUsers(request):
-    if request.method == 'GET':
-        user_id = request.GET.get('uid')
-        
-        if user_id:  # Ensure user_id is not None
-            status = 'activated'
-            print("Activating user with ID =", user_id)
-            UserRegistrationModel.objects.filter(id=user_id).update(status=status)
+    """
+    Activates a registered user account upon administrative review.
+    Accepts POST (preferred) or GET (backward compatibility) with valid admin session.
+    """
+    if not is_admin_authenticated(request):
+        messages.error(request, 'Unauthorized action. Admin session required.')
+        return redirect('AdminLogin')
 
-        # Redirect to the view where users are listed after activation
-        return redirect('RegisterUsersView')  # Replace with your actual URL name
+    user_id = request.POST.get('uid') or request.GET.get('uid')
+    if user_id:
+        try:
+            user = get_object_or_404(UserRegistrationModel, id=user_id)
+            user.status = 'activated'
+            user.save()
+            messages.success(request, f"User '{user.loginid}' has been successfully activated.")
+        except Exception as e:
+            messages.error(request, f"Failed to activate user: {str(e)}")
 
+    return redirect('RegisterUsersView')
+
+
+@require_http_methods(["POST", "GET"])
 def DeleteUsers(request):
-    if request.method == 'GET':
-        user_id = request.GET.get('uid')
-        
-        if user_id:  # Ensure user_id is not None
-            print("Deleting user with ID =", user_id)
-            UserRegistrationModel.objects.filter(id=user_id).delete()
+    """
+    Permanently revokes and deletes a user account.
+    Accepts POST (preferred) or GET (backward compatibility) with valid admin session.
+    """
+    if not is_admin_authenticated(request):
+        messages.error(request, 'Unauthorized action. Admin session required.')
+        return redirect('AdminLogin')
 
-        # Redirect to the view where users are listed after deletion
-        return redirect('RegisterUsersView')  # Replace with your actual URL name
-def adminhome(request):
-    return render(request,'admins/AdminHome.html')
+    user_id = request.POST.get('uid') or request.GET.get('uid')
+    if user_id:
+        try:
+            user = get_object_or_404(UserRegistrationModel, id=user_id)
+            loginid = user.loginid
+            user.delete()
+            messages.success(request, f"User '{loginid}' deleted successfully.")
+        except Exception as e:
+            messages.error(request, f"Failed to delete user: {str(e)}")
+
+    return redirect('RegisterUsersView')
+
+
+def AdminLogout(request):
+    """Logs out administrator and flushes session data."""
+    request.session.flush()
+    messages.success(request, 'Logged out from administrator portal successfully.')
+    return redirect('AdminLogin')
+
 

@@ -7,18 +7,31 @@
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-An enterprise-grade, full-stack financial analytics web application engineered with **Django 5.x** and **Scikit-Learn**, featuring a multi-relational Pandas ETL data pipeline, Random Forest behavioral classification, role-based access control (RBAC), and an interactive analytics dashboard.
+A full-stack financial analytics web application engineered with **Django 5.x** and **Scikit-Learn**, featuring a multi-relational Pandas ETL data pipeline, Random Forest behavioral classification, role-based access control (RBAC), and an interactive analytics dashboard. Built as a portfolio project for backend and ML software engineering roles.
 
 ---
 
-## 🎯 Resume Highlights & Core Capabilities
+## 🎯 Project Overview & Objectives
 
-* **Full-Stack Django Architecture:** Built an end-to-end web platform using Python 3.11 and Django 5.x with modular MVC architecture, responsive Bootstrap 5 interface, and relational data modeling.
-* **Multi-Relational Pandas ETL Data Pipeline:** Ingests and joins heterogeneous transaction data (`analytics.csv`), multi-currency wallet counts (`wallets.csv`), and demographic profiles (`users.csv`) using Pandas aggregation and categorical encoding.
-* **Predictive ML Classification & Feature Importance:** Engineered a Scikit-Learn **Random Forest Classifier** achieving multi-class behavioral prediction with Gini feature importance ranking, evaluation metrics (Accuracy, Precision, Recall, F1-Score), and serialized model persistence via Joblib.
-* **Real-Time On-Demand Inference:** Designed an interactive web interface allowing users and administrators to test dynamic transaction profiles and obtain instant model predictions with confidence probability distributions.
-* **Multi-Tier Security & Auditing:** Secured user registrations with PBKDF2 SHA-256 password hashing, fine-grained admin account verification (`waiting` vs `activated` states), and session-based audit logging.
-* **Enterprise CI/CD & Automated Testing:** Implemented automated GitHub Actions workflow (`.github/workflows/ci.yml`) validating Django integrity checks and unit test suites across multi-relational ETL and inference pipelines.
+In modern fintech and cryptocurrency operations, understanding transactional behavior across heterogeneous storage silos (wallets, demographic records, transaction ledgers) is critical. 
+
+This platform serves two primary objectives:
+1. **Multi-Relational Data Ingestion & Analytics:** Unify, clean, and analyze distributed financial datasets (`analytics.csv`, `wallets.csv`, and `users.csv`) using Pandas ETL routines.
+2. **Predictive Analytics & Behavioral Modeling:** Train and evaluate an ensemble **Random Forest Classifier** to analyze behavioral indicators (transaction velocity, cumulative volume, wallet count, and regional demographics) and predict the user's primary digital currency preference with confidence distributions.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Backend Framework** | Python 3.11, Django 5.2.x (MVC architecture, ORM, Session Middleware) |
+| **Machine Learning** | Scikit-Learn 1.9.x, NumPy 2.x, Joblib (Model persistence) |
+| **Data Processing & ETL** | Pandas 3.x (Multi-relational joins, aggregation, handling missing values) |
+| **Database** | SQLite3 (Indexed relational schema with zero-data-loss migrations) |
+| **Security & Auth** | PBKDF2 SHA-256 password hashing, CSRF tokens, Session RBAC authorization |
+| **Frontend UI** | HTML5, CSS3, Bootstrap 4/5, FontAwesome, Jinja/Django Template Language |
+| **CI/CD & DevOps** | GitHub Actions (`ci.yml`), automated unit & integration test runners |
 
 ---
 
@@ -26,36 +39,36 @@ An enterprise-grade, full-stack financial analytics web application engineered w
 
 ```mermaid
 flowchart TD
-    subgraph Data Layer
-        A1[media/analytics.csv<br/>Transactions & Volume]
-        A2[media/wallets.csv<br/>User Wallet Accounts]
-        A3[media/users.csv<br/>Demographics & Countries]
+    subgraph Data Sources
+        A1[media/analytics.csv<br/>Transaction velocity & volume]
+        A2[media/wallets.csv<br/>Multi-currency wallet accounts]
+        A3[media/users.csv<br/>Demographics & countries]
     end
 
-    subgraph Multi-Relational ETL Pipeline
-        A2 -->|GroupBy user_id + Aggregate Size| B1[wallet_count Feature]
+    subgraph Multi-Relational Pandas ETL
+        A2 -->|GroupBy user_id + Aggregate Size| B1[wallet_count metric]
         A1 -->|Left Join on user_id| B2[Merged DataFrame]
         B1 --> B2
         A3 -->|Left Join country on user_id| B2
-        B2 -->|Label Encoding & Normalization| C[Clean Feature Matrix X<br/>tx_count, volume, wallets, country]
+        B2 -->|Handle missing values & Label Encoding| C[Clean Feature Matrix X<br/>tx_count, volume, wallets, country]
     end
 
-    subgraph Machine Learning Engine
-        C -->|Train / Test Split 80/20| D[RandomForestClassifier<br/>100 Estimators]
-        D -->|Gini Feature Importance| E[Model Metrics & Classification Report]
+    subgraph Machine Learning Pipeline
+        C -->|Stratified 80/20 Train/Test Split| D[RandomForestClassifier<br/>100 Estimators, max_depth=12]
+        D -->|Gini Feature Importance & Metrics| E[Evaluation: Accuracy, Precision, Recall, F1]
         D -->|Joblib Serialization| F[(media/currency_model.pkl)]
     end
 
-    subgraph Web Application Layer
-        User([Client / Analyst]) -->|HTTP / Session RBAC| G[Django MVC Views]
+    subgraph Web & Governance Layer
+        Client([Analyst / Admin]) -->|Session RBAC & CSRF Protection| G[Django MVC Views]
         G -->|Load Serialized Artifacts| F
-        G -->|On-Demand Inference| H[Real-Time Analytics Dashboard]
+        G -->|On-Demand Real-Time Inference| H[Interactive Analytics & Predictions]
     end
 ```
 
 ---
 
-## 📊 Multi-Relational Feature Engineering & Gini Importance
+## 📊 Feature Engineering & Gini Importance
 
 The predictive model uses four engineered features extracted across three distinct data sources:
 
@@ -74,95 +87,120 @@ The predictive model uses four engineered features extracted across three distin
 digital-currency-analytics-platform/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                 # Automated CI/CD (Django checks & test suite)
-├── admins/                        # Admin app (user auditing & account activation)
+│       └── ci.yml                 # GitHub Actions CI workflow (Django checks & test suite)
+├── admins/                        # Admin app (user governance, account approval, & session RBAC)
 │   ├── admin.py
 │   ├── models.py
-│   ├── views.py
+│   ├── views.py                   # AdminLoginCheck, RegisterUsersView, ActivaUsers, DeleteUsers
+│   ├── tests.py                   # Automated tests for admin authorization & security
 │   └── urls.py
-├── users/                         # Users app (auth, ETL, ML training & inference)
-│   ├── models.py                  # UserRegistrationModel with PBKDF2 hashing
-│   ├── views.py                   # Multi-relational ETL, training, & prediction
-│   ├── tests.py                   # Automated unit test suite (6 tests)
+├── users/                         # Users app (auth, ETL pipeline, ML training & inference)
+│   ├── models.py                  # UserRegistrationModel with PBKDF2 hashing & indexed fields
+│   ├── views.py                   # Multi-relational ETL, Random Forest training, & prediction
+│   ├── tests.py                   # Comprehensive unit and integration test suite
 │   └── urls.py
 ├── digitalcurrency/               # Django core settings and URL routing
-│   ├── settings.py
-│   ├── urls.py
+│   ├── settings.py                # Environment-driven settings (SECRET_KEY, DEBUG, ALLOWED_HOSTS)
+│   ├── urls.py                    # Root URL configuration
+│   ├── views.py                   # Public landing and authentication navigation views
 │   └── wsgi.py
 ├── media/                         # Datasets & serialized ML model artifacts
-│   ├── analytics.csv              # Transaction records
-│   ├── wallets.csv                # Multi-currency wallet records
-│   ├── users.csv                  # User demographic records
+│   ├── analytics.csv              # 1,000 transaction records
+│   ├── wallets.csv                # 6,000 user wallet records
+│   ├── users.csv                  # 4,000 user demographic records
 │   ├── currency_model.pkl         # Trained Scikit-Learn Random Forest model
 │   ├── country_encoder.pkl        # Serialized Country LabelEncoder
 │   └── currency_label_encoder.pkl # Serialized Target Currency LabelEncoder
-├── scripts/                       # Developer automation scripts
-│   ├── start_digital_currency.bat # One-click Django dev server launcher
-│   └── run_tests.bat              # One-click automated test runner
-├── templates/                     # Bootstrap 5 responsive templates
-│   ├── admins/                    # AdminHome, viewregisterusers
-│   └── users/                     # accuracy, prediction, viewData, UserHomePage
-├── db.sqlite3                     # Pre-seeded database with test credentials
-├── manage.py
-├── requirements.txt
-├── .gitignore
-├── LICENSE
-└── README.md
+├── templates/                     # Jinja/Django HTML templates with responsive Bootstrap UI
+│   ├── base.html                  # Master landing layout
+│   ├── index.html                 # Platform homepage
+│   ├── AdminLogin.html            # Admin login form
+│   ├── UserLogin.html             # Analyst login form
+│   ├── UserRegistrations.html     # Registration form
+│   ├── admins/                    # Admin portal templates (AdminHome, viewregisterusers)
+│   └── users/                     # User portal templates (UserHomePage, accuracy, prediction, viewData)
+├── interview-preparation/         # Complete interview guides and defense notes
+├── scripts/                       # Automation batch scripts (test runner & dev server)
+├── .env.example                   # Environment configuration template
+├── .gitignore                     # Git ignore rules
+├── requirements.txt               # Pinned project dependencies
+└── manage.py                      # Django management script
 ```
 
 ---
 
-## 🚀 Quickstart & Local Execution
+## 🚀 Setup & Local Execution Guide
 
-### 1. Prerequisites
-* Python 3.10+ (Recommended: Python 3.11)
-* Git
+### Prerequisites
+- Python 3.11+
+- Git
 
-### 2. Installation & Setup
+### 1. Clone & Set Up Virtual Environment
 ```bash
-# Clone the repository
-git clone https://github.com/mullewarpramodh-tech/digital-currency-analytics-platform.git
+git clone <repository_url>
 cd digital-currency-analytics-platform
+python -m venv venv
 
-# Install dependencies
+# On Windows:
+venv\Scripts\activate
+# On Linux / macOS:
+source venv/bin/activate
+```
+
+### 2. Install Dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-### 3. Run Automated Tests
+### 3. Environment Variables Configuration
+Copy `.env.example` to `.env`:
 ```bash
-python manage.py test users
-# Or simply double-click: scripts/run_tests.bat
+# On Windows PowerShell:
+Copy-Item .env.example .env
+# On Linux / macOS:
+cp .env.example .env
 ```
 
-### 4. Start the Application
+### 4. Apply Database Migrations
+```bash
+python manage.py migrate
+```
+
+### 5. Run Automated Tests
+```bash
+python manage.py test
+```
+
+### 6. Start Development Server
 ```bash
 python manage.py runserver 127.0.0.1:8000
-# Or double-click: scripts/start_digital_currency.bat
 ```
-*Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.*
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
 
 ---
 
-## 🔑 Default Credentials for Evaluation
+## 🔒 Security & Governance Architecture
 
-| Role | Username / Login ID | Password | Access Rights |
-| :--- | :--- | :--- | :--- |
-| **System Admin** | `admin` | `admin` | User activation, audit logs, raw dataset viewer |
-| **Pre-Activated User** | `44` | `1234` | ML training, model evaluation metrics, live prediction |
-
----
-
-## 🧪 Automated Testing Coverage
-
-The platform includes a dedicated test suite in `users/tests.py`:
-1. `test_user_creation_and_defaults`: Verifies new user status defaults to `'waiting'`.
-2. `test_password_hashing_security`: Validates PBKDF2 SHA-256 non-plaintext storage and hash verification.
-3. `test_rbac_approval_activation`: Verifies admin activation flow from `'waiting'` to `'activated'`.
-4. `test_dataset_files_exist`: Ensures all three CSV datasets exist in `media/`.
-5. `test_multi_relational_merge`: Tests schema consistency, joins, and feature derivation.
-6. `test_trained_artifacts_and_inference`: Validates serialized models and probability distribution outputs.
+1. **Password Security:** Passwords stored using Django's `PBKDF2 SHA-256` hashing with dynamic salting. Plaintext passwords are never persisted.
+2. **Role-Based Access Control (RBAC):** Newly registered analysts are placed into a `waiting` state and cannot log in until an administrator explicitly reviews and activates the account.
+3. **Session Management:** Sensitive actions (activating users, deleting accounts, retraining ML models, running predictions) require authenticated sessions with automatic redirection on unauthorized access.
+4. **CSRF Protection:** All state-changing operations use `POST` requests protected by Django CSRF tokens.
+5. **Config Isolation:** `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, and admin credentials are decoupled from source code into environment variables.
 
 ---
 
-## 📄 License
+## ⚠️ Known Limitations & Future Improvements
+
+- **Current Limitations:**
+  - Synthetic dataset distribution: The transaction records in `media/analytics.csv` exhibit near-uniform class distribution across target currencies, establishing a ~20% baseline accuracy for 5 classes.
+  - Model retrain latency: Training executes synchronously in the view, which is suitable for 1,000 records but would block request threads for million-row datasets.
+- **Future Roadmap:**
+  - Asynchronous background task execution using Celery and Redis for ETL and ML model retraining.
+  - Integration with live cryptocurrency price or volume feeds (CoinGecko / Binance API).
+  - Model registry and versioning using MLflow.
+  - PostgreSQL database backend for production multi-tenant deployments.
+
+---
+
+## ⚖️ License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

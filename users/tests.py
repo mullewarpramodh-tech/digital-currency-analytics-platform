@@ -40,15 +40,53 @@ class UserSecurityAndRegistrationTest(TestCase):
         self.assertTrue(check_password(self.raw_password, self.user.password))
         self.assertFalse(check_password("WrongPassword", self.user.password))
 
+    def test_duplicate_registration_validation(self):
+        client = Client()
+        response = client.post(reverse('UserRegisterForm'), {
+            'name': 'Duplicate User',
+            'loginid': 'pramodh_dev',  # duplicate loginid
+            'password': 'password123',
+            'mobile': '9876543211',
+            'email': 'different@example.com'
+        })
+        self.assertEqual(response.status_code, 200)
+        # Should remain only 1 user
+        self.assertEqual(UserRegistrationModel.objects.filter(loginid='pramodh_dev').count(), 1)
+
     def test_rbac_approval_activation(self):
-        # User starts in 'waiting' status
         self.assertEqual(self.user.status, "waiting")
-        # Admin approves user
         self.user.status = "activated"
         self.user.save()
 
         updated_user = UserRegistrationModel.objects.get(loginid="pramodh_dev")
         self.assertEqual(updated_user.status, "activated")
+
+    def test_pending_user_cannot_login(self):
+        client = Client()
+        response = client.post(reverse('UserLoginCheck'), {
+            'loginid': 'pramodh_dev',
+            'pswd': self.raw_password
+        })
+        # Should stay on login page with warning message
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('loggeduser', client.session)
+
+    def test_activated_user_can_login_and_logout(self):
+        self.user.status = "activated"
+        self.user.save()
+
+        client = Client()
+        response = client.post(reverse('UserLoginCheck'), {
+            'loginid': 'pramodh_dev',
+            'pswd': self.raw_password
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(client.session.get('loggeduser'), 'Pramodh Mullewar')
+
+        # Logout test
+        logout_response = client.get(reverse('UserLogout'))
+        self.assertEqual(logout_response.status_code, 302)
+        self.assertNotIn('loggeduser', client.session)
 
 
 class MultiRelationalETLAndModelInferenceTest(TestCase):
@@ -68,7 +106,6 @@ class MultiRelationalETLAndModelInferenceTest(TestCase):
         self.assertTrue(os.path.exists(self.users_csv), "users.csv must exist in media/")
 
     def test_multi_relational_merge(self):
-        # Load and verify multi-relational schemas
         df_analytics = pd.read_csv(self.analytics_csv)
         df_wallets = pd.read_csv(self.wallets_csv)
         df_users = pd.read_csv(self.users_csv)
@@ -77,7 +114,6 @@ class MultiRelationalETLAndModelInferenceTest(TestCase):
         self.assertIn("user_id", df_wallets.columns)
         self.assertIn("user_id", df_users.columns)
 
-        # Replicate ETL multi-relational aggregation
         wallet_count_df = df_wallets.groupby("user_id").size().reset_index(name="wallet_count")
         merged_df = df_analytics.merge(wallet_count_df, on="user_id", how="left").fillna({"wallet_count": 0})
         merged_df = merged_df.merge(df_users[["user_id", "country"]], on="user_id", how="left").fillna({"country": "Unknown"})
@@ -100,23 +136,45 @@ class MultiRelationalETLAndModelInferenceTest(TestCase):
         country_encoder = joblib.load(country_enc_path)
         currency_encoder = joblib.load(currency_enc_path)
 
-        # Run mock inference sample
-        country_code = int(country_encoder.transform([country_encoder.classes_[0]])[0])
+        country_idx = int(country_encoder.transform([country_encoder.classes_[0]])[0])
         input_data = pd.DataFrame([{
-            "tx_count": 45,
-            "total_volume_usd": 12500.50,
-            "wallet_count": 3,
-            "country_encoded": country_code
+            "tx_count": 15,
+            "total_volume_usd": 35000.0,
+            "wallet_count": 2,
+            "country_encoded": country_idx
         }])
 
-        pred_class = model.predict(input_data)
-        self.assertEqual(len(pred_class), 1)
+        pred_code = model.predict(input_data)[0]
+        prediction_currency = currency_encoder.inverse_transform([pred_code])[0]
+        self.assertIn(prediction_currency, currency_encoder.classes_)
 
-        predicted_label = currency_encoder.inverse_transform(pred_class)[0]
-        self.assertIsInstance(predicted_label, str)
-        self.assertGreater(len(predicted_label), 0)
+        probs = model.predict_proba(input_data)[0]
+        self.assertAlmostEqual(sum(probs), 1.0, places=4)
 
-        probabilities = model.predict_proba(input_data)[0]
-        confidence = float(probabilities[pred_class[0]])
-        self.assertGreaterEqual(confidence, 0.0)
-        self.assertLessEqual(confidence, 1.0)
+    def test_prediction_view_post_validation(self):
+        client = Client()
+        session = client.session
+        session['id'] = 1
+        session['loggeduser'] = 'Test User'
+        session.save()
+
+        # Valid input
+        response = client.post(reverse('prediction'), {
+            'tx_count': '10',
+            'total_volume_usd': '15000.0',
+            'wallet_count': '2',
+            'country': 'USA'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('prediction', response.context)
+        self.assertIsNotNone(response.context['prediction'])
+
+        # Invalid input (negative values)
+        response_invalid = client.post(reverse('prediction'), {
+            'tx_count': '-5',
+            'total_volume_usd': '15000.0',
+            'wallet_count': '2',
+            'country': 'USA'
+        })
+        self.assertEqual(response_invalid.status_code, 200)
+        self.assertIsNotNone(response_invalid.context['error'])

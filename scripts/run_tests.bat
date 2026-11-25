@@ -2,7 +2,8 @@
 title Digital Currency Platform - Automated Test Suite
 cd /d "%~dp0.."
 echo =====================================================================
-echo  Running Django Automated Test Suite & Multi-Relational ML Tests
+echo  Running Django Integrity Checks and Automated Test Suite
 echo =====================================================================
-py -3.11 manage.py test users
+python manage.py check
+python manage.py test
 pause
